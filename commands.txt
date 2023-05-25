@@ -1,0 +1,3 @@
+# .conda/bin/pip install torch==1.9.1 torchvision==0.11.2 torchaudio==0.9.1 -f https://download.pytorch.org/whl/torch_stable.html
+.conda/bin/pip install torch torchvision torchaudio --upgrade
+.conda/bin/pip install opencv-python matplotlib dlib fvcore

@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import VGG as TVGG
-from torchvision.models.vgg import load_state_dict_from_url, model_urls, cfgs
+from torchvision.models.vgg import VGG16_Weights, cfgs
+from torch.hub import load_state_dict_from_url
 
 from .modules.spectral_norm import spectral_norm as SpectralNorm
 from .elegant import Generator
@@ -103,7 +104,7 @@ def _vgg(arch, cfg, batch_norm, pretrained, progress, **kwargs):
         kwargs['init_weights'] = False
     model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch],
+        state_dict = load_state_dict_from_url(VGG16_Weights.DEFAULT.url,
                                               progress=progress)
         model.load_state_dict(state_dict)
     return model

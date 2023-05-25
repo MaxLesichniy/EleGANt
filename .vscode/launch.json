@@ -1,0 +1,88 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "main_transfer_selective_skin",
+            "type": "python",
+            "request": "launch",
+            "program": "./scripts/main.py",
+            "args": [
+                "transfer_all",
+                "--name", "selective_skin",
+                "--reference-dir", "../Makeups",
+                "--source-dir", "../Sources/Small", 
+                "--save_path", "../Results/elegant_test",
+                "--mask_area", "skin",
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "main_transfer_selective_eye",
+            "type": "python",
+            "request": "launch",
+            "program": "./scripts/main.py",
+            "args": [
+                "transfer_all",
+                "--name", "selective_eye",
+                "--reference-dir", "../Makeups",
+                "--source-dir", "../Sources/Small", 
+                "--save_path", "../Results/elegant_test",
+                "--mask_area", "eye",
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "main_transfer_selective_lips",
+            "type": "python",
+            "request": "launch",
+            "program": "./scripts/main.py",
+            "args": [
+                "transfer_all",
+                "--name", "selective_lips",
+                "--reference-dir", "../Makeups",
+                "--source-dir", "../Sources/Small", 
+                "--save_path", "../Results/elegant_test",
+                "--mask_area", "lips",
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "main_transfer_all",
+            "type": "python",
+            "request": "launch",
+            "program": "./scripts/main.py",
+            "env": {
+                "USE_MPS": "1"
+            },
+            "args": [
+                "transfer_all",
+                "--name", "all",
+                "--reference-dir", "../Makeups",
+                "--source-dir", "../Sources/Small", 
+                "--save_path", "../Results/elegant_test"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "main_transfer_single",
+            "type": "python",
+            "request": "launch",
+            "program": "./scripts/main.py",
+            "args": [
+                "transfer",
+                "--input", "../Sources/face_A47002E9-962F-42A1-A49E-91A07C71D431.jpeg",
+                "--output", "../Results/elegant_test/face_A47002E9-962F-42A1-A49E-91A07C71D431.jpeg",
+                "--ref", "../Makeups/XMY-136.png"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}

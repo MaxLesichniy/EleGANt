@@ -49,7 +49,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     args.gpu = 'cuda:' + args.gpu
-    args.device = torch.device(args.gpu)
+    # args.device = torch.device(args.gpu)
+    args.device = torch.device("mps")
 
     args.save_folder = os.path.join(args.save_path, args.name)
     if not os.path.exists(args.save_folder):

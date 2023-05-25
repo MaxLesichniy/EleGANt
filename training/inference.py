@@ -21,6 +21,46 @@ class InputSample:
         self.transfer_input = None
         self.attn_out_list = None
 
+class InferenceResult:
+    crop_face = None
+
+    def __init__(self, source, references, result):
+        self.source = source
+        self.references = references
+        self.result = result
+
+    def save_compared_image(self, path):
+        source_array = np.array(self.source)
+        h, w, _ = source_array.shape
+        res_result = self.result.resize((h, w))
+        result_array = np.array(res_result)
+        references_array = []
+        for i in self.references:
+            resized = i.resize((h, w))
+            array = np.array(resized)
+            references_array.append(array)
+        diff_image = np.hstack((source_array, *references_array, result_array))
+        Image.fromarray(diff_image.astype(np.uint8)).save(path)
+
+    def postrocessed(self):
+        if self.crop_face is not None:
+            source = source.crop(
+                (self.crop_face.left(), self.crop_face.top(), self.crop_face.right(), self.crop_face.bottom()))
+        source = np.array(source)
+        result = np.array(result)
+
+        height, width = source.shape[:2]
+        small_source = cv2.resize(source, (self.img_size, self.img_size))
+        laplacian_diff = source.astype(float) - cv2.resize(small_source, (width, height)).astype(float)
+        result = (cv2.resize(result, (width, height)) + laplacian_diff).round().clip(0, 255)
+
+        result = result.astype(np.uint8)
+
+        if self.denoise:
+            result = cv2.fastNlMeansDenoisingColored(result)
+        result = Image.fromarray(result).convert('RGB')
+        return result
+
 
 class Inference:
     """
@@ -29,7 +69,7 @@ class Inference:
     and transfers the makeup of reference to source.
     """
     def __init__(self, config, args, model_path="G.pth"):
-
+        self.args = args
         self.device = args.device
         self.solver = Solver(config, args, inference=model_path)
         self.preprocess = PreProcess(config, args.device)
@@ -58,10 +98,8 @@ class Inference:
 
         height, width = source.shape[:2]
         small_source = cv2.resize(source, (self.img_size, self.img_size))
-        laplacian_diff = source.astype(
-            np.float) - cv2.resize(small_source, (width, height)).astype(np.float)
-        result = (cv2.resize(result, (width, height)) +
-                  laplacian_diff).round().clip(0, 255)
+        laplacian_diff = source.astype(float) - cv2.resize(small_source, (width, height)).astype(float)
+        result = (cv2.resize(result, (width, height)) + laplacian_diff).round().clip(0, 255)
 
         result = result.astype(np.uint8)
 
@@ -78,8 +116,11 @@ class Inference:
         source_input = self.prepare_input(*source_input)
         return InputSample(source_input)
 
-    def generate_reference_sample(self, reference_input, apply_mask=None, 
-                                  source_mask=None, mask_area=None, saturation=1.0):
+    def generate_reference_sample(self, reference_input, 
+                                  apply_mask=None, 
+                                  source_mask=None, 
+                                  mask_area=None, 
+                                  saturation=1.0):
         """
         all the operations on the mask, e.g., partial mask, saturation, 
         should be finally defined in apply_mask
@@ -181,33 +222,93 @@ class Inference:
         return result
 
     
-    def transfer(self, source: Image, reference: Image, postprocess=True):
+    def transfer(self, source: Image, reference: Image, diff_img_path: str, postprocess=True):
         """
         Args:
             source (Image): The image where makeup will be transfered to.
             reference (Image): Image containing targeted makeup.
         Return:
-            Image: Transfered image.
+            # Image: Transfered image.
+            InferenceResult: object with result info
         """
-        source_input, face, crop_face = self.preprocess(source)
-        reference_input, _, _ = self.preprocess(reference)
+        is_crop = not self.args.no_face_cropping
+        source_input, face, crop_face = self.preprocess(source, is_crop)
+        reference_input, _, ref_crop_face = self.preprocess(reference)
         if not (source_input and reference_input):
             return None
 
         #source_sample = self.generate_source_sample(source_input)
         #reference_samples = [self.generate_reference_sample(reference_input)]
         #result = self.interface_transfer(source_sample, reference_samples)
-        source_input = self.prepare_input(*source_input)
-        reference_input = self.prepare_input(*reference_input)
-        result = self.solver.test(*source_input, *reference_input)
-        
+        result = self.solver.test(*self.prepare_input(*source_input), *self.prepare_input(*reference_input))
+
+        if self.args.comp_result:
+            result_size = result.size
+            source_preview = source
+            if crop_face:
+                source_preview = source_preview.crop((crop_face.left(), crop_face.top(), crop_face.right(), crop_face.bottom())).resize(result_size)
+            reference_preview = reference.crop((ref_crop_face.left(), ref_crop_face.top(), ref_crop_face.right(), ref_crop_face.bottom())).resize(result_size)
+
+            InferenceResult(source=source_preview, 
+                            references=[reference_preview], 
+                            result=result).save_compared_image(diff_img_path)
+
         if not postprocess:
             return result
         else:
             return self.postprocess(source, crop_face, result)
 
-    def joint_transfer(self, source: Image, reference_lip: Image, reference_skin: Image,
-                       reference_eye: Image, postprocess=True):
+    def transfer_selective(self, source: Image, 
+                           reference: Image, 
+                           mask_area: List[str], 
+                           diff_img_path: str,
+                           postprocess=True):
+        is_crop = not self.args.no_face_cropping
+        source_input, _, crop_face = self.preprocess(source, is_crop)
+        lip_input, _, ref_crop_face = self.preprocess(reference)
+        skin_input, _, _ = self.preprocess(reference)
+        eye_input, _, _ = self.preprocess(reference)
+        if not (source_input and lip_input and skin_input and eye_input):
+            return None
+
+        source_mask = source_input[1]
+        source_sample = self.generate_source_sample(source_input)
+        reference_samples = [
+            # self.generate_reference_sample(lip_input, source_mask=source_mask, mask_area='lip'),
+            # self.generate_reference_sample(skin_input, source_mask=source_mask, mask_area='skin'),
+            # self.generate_reference_sample(eye_input, source_mask=source_mask, mask_area='eye')
+        ]
+        
+        if "lip" in mask_area:
+            reference_samples.append(self.generate_reference_sample(lip_input, source_mask=source_mask, mask_area='lip'))
+        if "skin" in mask_area:
+            reference_samples.append(self.generate_reference_sample(skin_input, source_mask=source_mask, mask_area='skin'))
+        if "eye" in mask_area:
+            reference_samples.append(self.generate_reference_sample(eye_input, source_mask=source_mask, mask_area='eye'))
+
+        result = self.interface_transfer(source_sample, reference_samples)
+        
+        if self.args.comp_result:
+            result_size = result.size
+            source_preview = source
+            if crop_face:
+                source_preview = source_preview.crop((crop_face.left(), crop_face.top(), crop_face.right(), crop_face.bottom())).resize(result_size)
+            reference_preview = reference.crop((ref_crop_face.left(), ref_crop_face.top(), ref_crop_face.right(), ref_crop_face.bottom())).resize(result_size)
+
+            InferenceResult(source=source_preview, 
+                            references=[reference_preview], 
+                            result=result).save_compared_image(diff_img_path)
+
+        if not postprocess:
+            return result
+        else:
+            return self.postprocess(source, crop_face, result)
+
+    def joint_transfer(self, source: Image, 
+                       reference_lip: Image, 
+                       reference_skin: Image,
+                       reference_eye: Image,
+                       postprocess=True):
         source_input, face, crop_face = self.preprocess(source)
         lip_input, _, _ = self.preprocess(reference_lip)
         skin_input, _, _ = self.preprocess(reference_skin)
@@ -218,8 +319,8 @@ class Inference:
         source_mask = source_input[1]
         source_sample = self.generate_source_sample(source_input)
         reference_samples = [
-            self.generate_reference_sample(lip_input, source_mask=source_mask, mask_area='lip'),
-            self.generate_reference_sample(skin_input, source_mask=source_mask, mask_area='skin'),
+            # self.generate_reference_sample(lip_input, source_mask=source_mask, mask_area='lip'),
+            # self.generate_reference_sample(skin_input, source_mask=source_mask, mask_area='skin'),
             self.generate_reference_sample(eye_input, source_mask=source_mask, mask_area='eye')
         ]
         
