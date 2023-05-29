@@ -12,7 +12,7 @@ from .model import BiSeNet
 
 
 class FaceParser:
-    def __init__(self, device="mps"):
+    def __init__(self, device="cpu"):
         mapper = [0, 1, 2, 3, 4, 5, 0, 11, 12, 0, 6, 8, 7, 9, 13, 0, 0, 10, 0]
         self.device = device
         self.dic = torch.tensor(mapper, device=device).unsqueeze(1)
