@@ -222,7 +222,7 @@ class Inference:
         return result
 
     
-    def transfer(self, source: Image, reference: Image, diff_img_path: str, postprocess=True):
+    def transfer(self, source: Image, reference: Image, diff_img_path: str = None, postprocess=True):
         """
         Args:
             source (Image): The image where makeup will be transfered to.
@@ -242,7 +242,7 @@ class Inference:
         #result = self.interface_transfer(source_sample, reference_samples)
         result = self.solver.test(*self.prepare_input(*source_input), *self.prepare_input(*reference_input))
 
-        if self.args.comp_result:
+        if self.args.comp_result and diff_img_path:
             result_size = result.size
             source_preview = source
             if crop_face:

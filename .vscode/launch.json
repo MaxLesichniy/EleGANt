@@ -12,9 +12,9 @@
             "args": [
                 "transfer_all",
                 "--name", "selective_skin",
-                "--reference-dir", "../Makeups",
-                "--source-dir", "../Sources/Small", 
-                "--save_path", "../Results/elegant_test",
+                "--reference-dir", "../Data/Makeups",
+                "--source-dir", "../Data/Sources/Small", 
+                "--save_path", "../Data/Results/elegant_test",
                 "--mask_area", "skin",
             ],
             "console": "integratedTerminal",
@@ -28,9 +28,9 @@
             "args": [
                 "transfer_all",
                 "--name", "selective_eye",
-                "--reference-dir", "../Makeups",
-                "--source-dir", "../Sources/Small", 
-                "--save_path", "../Results/elegant_test",
+                "--reference-dir", "../Data/Makeups",
+                "--source-dir", "../Data/Sources/Small", 
+                "--save_path", "../Data/Results/elegant_test",
                 "--mask_area", "eye",
             ],
             "console": "integratedTerminal",
@@ -44,9 +44,9 @@
             "args": [
                 "transfer_all",
                 "--name", "selective_lips",
-                "--reference-dir", "../Makeups",
-                "--source-dir", "../Sources/Small", 
-                "--save_path", "../Results/elegant_test",
+                "--reference-dir", "../Data/Makeups",
+                "--source-dir", "../Data/Sources/Small", 
+                "--save_path", "../Data/Results/elegant_test",
                 "--mask_area", "lips",
             ],
             "console": "integratedTerminal",
@@ -57,15 +57,12 @@
             "type": "python",
             "request": "launch",
             "program": "./scripts/main.py",
-            "env": {
-                "USE_MPS": "1"
-            },
             "args": [
                 "transfer_all",
                 "--name", "all",
-                "--reference-dir", "../Makeups",
-                "--source-dir", "../Sources/Small", 
-                "--save_path", "../Results/elegant_test"
+                "--reference-dir", "../Data/Makeups",
+                "--source-dir", "../Data/Sources/Small", 
+                "--save_path", "../Data/Results/elegant_test"
             ],
             "console": "integratedTerminal",
             "justMyCode": true
@@ -77,9 +74,9 @@
             "program": "./scripts/main.py",
             "args": [
                 "transfer",
-                "--input", "../Sources/face_A47002E9-962F-42A1-A49E-91A07C71D431.jpeg",
-                "--output", "../Results/elegant_test/face_A47002E9-962F-42A1-A49E-91A07C71D431.jpeg",
-                "--ref", "../Makeups/XMY-136.png"
+                "--input", "../Data/Sources/face_A47002E9-962F-42A1-A49E-91A07C71D431.jpeg",
+                "--output", "../Data/Results/elegant_test/face_A47002E9-962F-42A1-A49E-91A07C71D431.jpeg",
+                "--ref", "../Data/Makeups/XMY-136.png"
             ],
             "console": "integratedTerminal",
             "justMyCode": true
